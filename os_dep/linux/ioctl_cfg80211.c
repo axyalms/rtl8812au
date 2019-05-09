@@ -32,6 +32,7 @@
 #endif /* Linux kernel >= 4.0.0 */
 
 #include <rtw_wifi_regd.h>
+#include <hal_data.h>
 
 #define RTW_MAX_MGMT_TX_CNT (8)
 #define RTW_MAX_MGMT_TX_MS_GAS (500)
@@ -3419,57 +3420,48 @@ static int cfg80211_rtw_disconnect(struct wiphy *wiphy, struct net_device *ndev,
         return 0;
 }
 
+
 static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
-        struct wireless_dev *wdev,
+	struct wireless_dev *wdev,
 #endif
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)) || defined(COMPAT_KERNEL_RELEASE)
-        enum nl80211_tx_power_setting type, int mbm)
+	enum nl80211_tx_power_setting type,
 #else
-        enum tx_power_setting type, int dbm)
+	enum tx_power_setting type,
 #endif
+	int value)
 {
-#if 0
-        struct iwm_priv *iwm = wiphy_to_iwm(wiphy);
-        int ret;
-
-        switch (type) {
-        case NL80211_TX_POWER_AUTOMATIC:
-                return 0;
-        case NL80211_TX_POWER_FIXED:
-                if (mbm < 0 || (mbm % 100))
-                        return -EOPNOTSUPP;
-
-                if (!test_bit(IWM_STATUS_READY, &iwm->status))
-                        return 0;
-
-                ret = iwm_umac_set_config_fix(iwm, UMAC_PARAM_TBL_CFG_FIX,
-                                              CFG_TX_PWR_LIMIT_USR,
-                                              MBM_TO_DBM(mbm) * 2);
-                if (ret < 0)
-                        return ret;
-
-                return iwm_tx_power_trigger(iwm);
-        default:
-                IWM_ERR(iwm, "Unsupported power type: %d\n", type);
-                return -EOPNOTSUPP;
-        }
+	_adapter *padapter = wiphy_to_adapter(wiphy);
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,36)) || defined(COMPAT_KERNEL_RELEASE)
+	value /= 100;
 #endif
-        DBG_8192C("%s\n", __func__);
-        return 0;
+
+	if(value > 40)
+		value = 40;
+
+	if(type == NL80211_TX_POWER_FIXED) {
+		pHalData->CurrentTxPwrIdx = value;
+		rtw_hal_set_tx_power_level(padapter, pHalData->CurrentChannel);
+	} else
+		return -EOPNOTSUPP;
+
+	return 0;
 }
 
 static int cfg80211_rtw_get_txpower(struct wiphy *wiphy,
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3,8,0))
-        struct wireless_dev *wdev,
+	struct wireless_dev *wdev,
 #endif
-        int *dbm)
+	int *dbm)
 {
-        DBG_8192C("%s\n", __func__);
+	_adapter *padapter = wiphy_to_adapter(wiphy);
+	HAL_DATA_TYPE	*pHalData = GET_HAL_DATA(padapter);
 
-        *dbm = (12);
-
-        return 0;
+	*dbm = pHalData->CurrentTxPwrIdx;
+	
+	return 0;
 }
 
 inline bool rtw_cfg80211_pwr_mgmt(_adapter *adapter)

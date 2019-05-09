@@ -612,7 +612,8 @@ phy_TxPwrAdjInPercentage(
 	
 	if(*pTxPwrIdx > RF6052_MAX_TX_PWR)
 		*pTxPwrIdx = RF6052_MAX_TX_PWR;
-	
+
+#if 0	
 	//
 	// <Roger_Notes> NEC Spec: dB = 10*log(X/Y), X: target value, Y: default value.
 	// For example: TxPower 50%, 10*log(50/100)=(nearly)-3dB
@@ -630,7 +631,9 @@ phy_TxPwrAdjInPercentage(
 	{
 		*pTxPwrIdx -=6;
 	}
-
+#endif
+	*pTxPwrIdx += pHalData->CurrentTxPwrIdx;
+	*pTxPwrIdx -= 18;
 	if(*pTxPwrIdx > RF6052_MAX_TX_PWR) // Avoid underflow condition.
 		*pTxPwrIdx = RF6052_MAX_TX_PWR;
 }
@@ -667,7 +670,7 @@ PHY_SetTxPowerLevel8812(
 	PHAL_DATA_TYPE	pHalData = GET_HAL_DATA(Adapter);
 	u8			path = 0;
 
-	//DBG_871X("==>PHY_SetTxPowerLevel8812()\n");
+	DBG_871X("==>PHY_SetTxPowerLevel8812()\n");
 
 	for( path = ODM_RF_PATH_A; path < pHalData->NumTotalRFPath; ++path )
 	{
@@ -675,7 +678,7 @@ PHY_SetTxPowerLevel8812(
 		PHY_TxPowerTrainingByPath_8812(Adapter, pHalData->CurrentChannelBW, Channel, path);
 	}
 
-	//DBG_871X("<==PHY_SetTxPowerLevel8812()\n");
+	DBG_871X("<==PHY_SetTxPowerLevel8812()\n");
 }
 
 u8
@@ -716,7 +719,7 @@ PHY_GetTxPowerIndex_8812A(
 	u8					tx_num = phy_GetCurrentTxNum_8812A( pAdapter, Rate );
 	BOOLEAN				bIn24G = _FALSE;
 
-	//DBG_871X("===> PHY_GetTxPowerIndex_8812A\n");
+	DBG_871X("===> PHY_GetTxPowerIndex_8812A\n");
 
 	txPower = (s8) PHY_GetTxPowerIndexBase( pAdapter, RFPath, Rate, BandWidth, Channel, &bIn24G );
 
@@ -725,7 +728,7 @@ PHY_GetTxPowerIndex_8812A(
 	limit = PHY_GetTxPowerLimit( pAdapter, pAdapter->registrypriv.RegPwrTblSel, (u8)(!bIn24G), pHalData->CurrentChannelBW, RFPath, Rate, pHalData->CurrentChannel);
 
 	powerDiffByRate = powerDiffByRate > limit ? limit : powerDiffByRate;
-	//DBG_871X("Rate-0x%x: (TxPower, PowerDiffByRate Path-%c) = (0x%X, %d)\n", Rate, ((RFPath==0)?'A':'B'), txPower, powerDiffByRate);
+	DBG_871X("Rate-0x%x: (TxPower, PowerDiffByRate Path-%c) = (0x%X, %d)\n", Rate, ((RFPath==0)?'A':'B'), txPower, powerDiffByRate);
 
 	// We need to reduce power index for VHT MCS 8 & 9.
 	if (Rate == MGN_VHT1SS_MCS8 || Rate == MGN_VHT1SS_MCS9 ||
@@ -786,7 +789,7 @@ PHY_GetTxPowerIndex_8812A(
 	if ( txPower % 2 == 1 && !IS_NORMAL_CHIP(pHalData->VersionID))
 		--txPower;
 
-	//DBG_871X("Final Tx Power(RF-%c, Channel: %d) = %d(0x%X)\n", ((RFPath==0)?'A':'B'), Channel,txPower, txPower);
+	DBG_871X("Final Tx Power(RF-%c, Channel: %d) = %d(0x%X)\n", ((RFPath==0)?'A':'B'), Channel,txPower, txPower);
 
 	return (u8) txPower;
 }
