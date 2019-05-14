@@ -3438,8 +3438,8 @@ static int cfg80211_rtw_set_txpower(struct wiphy *wiphy,
 	value /= 100;
 #endif
 
-	if(value > 40)
-		value = 40;
+	//if(value > 40)
+	//	value = 40;
 
 	if(type == NL80211_TX_POWER_FIXED) {
 		pHalData->CurrentTxPwrIdx = value;
