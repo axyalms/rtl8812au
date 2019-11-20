@@ -39,6 +39,9 @@
 
 #ifdef PLATFORM_LINUX
 #include <osdep_service_linux.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 11, 0)
+#include <linux/sched/signal.h>
+#endif
 #endif
 
 #ifdef PLATFORM_OS_XP
@@ -319,7 +322,12 @@ extern void rtw_init_timer(_timer *ptimer, void *padapter, void *pfunc);
 __inline static unsigned char _cancel_timer_ex(_timer *ptimer)
 {
 #ifdef PLATFORM_LINUX
-	return del_timer_sync(ptimer);
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(4, 15, 0))
+ 	return del_timer_sync(&ptimer->t);
+#else
+ 	return del_timer_sync(ptimer);
+#endif
+
 #endif
 #ifdef PLATFORM_FREEBSD
 	_cancel_timer(ptimer,0);
